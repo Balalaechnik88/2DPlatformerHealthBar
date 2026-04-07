@@ -1,5 +1,6 @@
 using UnityEngine;
 
+[RequireComponent(typeof(Animator))]
 public class EnemyAnimator : MonoBehaviour
 {
     private const string SpeedParameterName = "Speed";
@@ -9,7 +10,6 @@ public class EnemyAnimator : MonoBehaviour
 
     private int _speedId;
     private int _attackId;
-
     private bool _hasSpeedParameter;
     private bool _hasAttackTrigger;
 
@@ -48,9 +48,9 @@ public class EnemyAnimator : MonoBehaviour
 
         AnimatorControllerParameter[] parameters = animator.parameters;
 
-        for (int index = 0; index < parameters.Length; index++)
+        for (int i = 0; i < parameters.Length; i++)
         {
-            if (parameters[index].nameHash == parameterId)
+            if (parameters[i].nameHash == parameterId)
                 return true;
         }
 

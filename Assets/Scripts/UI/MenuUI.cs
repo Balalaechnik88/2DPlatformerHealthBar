@@ -4,15 +4,21 @@ using UnityEngine.SceneManagement;
 public class MenuUI : MonoBehaviour
 {
     [Header("References")]
-    [SerializeField] private GameObject _authorsPanel;
+    [SerializeField] private RectTransform _authorsPanel;
 
     [Header("Scene")]
     [SerializeField] private string _gameSceneName = "Game";
 
     private void Awake()
     {
-        if (_authorsPanel != null)
-            _authorsPanel.SetActive(false);
+        if (_authorsPanel == null)
+        {
+            Debug.LogError($"[{nameof(MenuUI)}] Не назначен AuthorsPanel. Скрипт отключён.", this);
+            enabled = false;
+            return;
+        }
+
+        _authorsPanel.gameObject.SetActive(false);
     }
 
     public void Play()
@@ -22,14 +28,12 @@ public class MenuUI : MonoBehaviour
 
     public void OpenAuthors()
     {
-        if (_authorsPanel != null)
-            _authorsPanel.SetActive(true);
+        _authorsPanel.gameObject.SetActive(true);
     }
 
     public void CloseAuthors()
     {
-        if (_authorsPanel != null)
-            _authorsPanel.SetActive(false);
+        _authorsPanel.gameObject.SetActive(false);
     }
 
     public void Quit()

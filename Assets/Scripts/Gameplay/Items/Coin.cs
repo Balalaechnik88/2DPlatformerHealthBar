@@ -1,16 +1,6 @@
-using System;
 using UnityEngine;
 
-public class Coin : MonoBehaviour, ICollectable
+public class Coin : Collectable
 {
-    [SerializeField] private int _value = 1;
-
-    public event Action<ICollectable> Collected;
-
-    public int Value => _value;
-
-    public void RaiseCollected()
-    {
-        Collected?.Invoke(this);
-    }
+    [field: SerializeField] public int Value { get; private set; } = 1;
 }

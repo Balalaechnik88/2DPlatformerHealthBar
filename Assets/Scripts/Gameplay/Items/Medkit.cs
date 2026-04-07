@@ -1,16 +1,6 @@
-using System;
 using UnityEngine;
 
-public class Medkit : MonoBehaviour, ICollectable
+public class Medkit : Collectable
 {
-    [SerializeField] private int _healAmount = 2;
-
-    public event Action<ICollectable> Collected;
-
-    public int HealAmount => _healAmount;
-
-    public void RaiseCollected()
-    {
-        Collected?.Invoke(this);
-    }
+    [field: SerializeField] public int HealAmount { get; private set; } = 2;
 }

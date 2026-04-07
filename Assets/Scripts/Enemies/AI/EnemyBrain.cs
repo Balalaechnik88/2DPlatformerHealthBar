@@ -3,8 +3,6 @@ using UnityEngine;
 
 public class EnemyBrain : MonoBehaviour
 {
-    private const float MinDistanceEpsilon = 0.0001f;
-
     [Header("References")]
     [SerializeField] private PlayerDetector _detector;
     [SerializeField] private WaypointPatroller _patroller;
@@ -18,9 +16,9 @@ public class EnemyBrain : MonoBehaviour
     [Header("Attack")]
     [SerializeField] private float _attackStartDistance = 2f;
 
+    private AttackRangeChecker _attackRangeChecker;
     private Transform _currentTarget;
     private bool _isAttacking;
-    private float _attackStartDistanceSquared;
     private IEnemyStrategy _patrolStrategy;
 
     public event Action AttackStarted;
@@ -29,8 +27,6 @@ public class EnemyBrain : MonoBehaviour
 
     private void Awake()
     {
-        _attackStartDistanceSquared = _attackStartDistance * _attackStartDistance;
-
         if (_detector == null ||
             _patroller == null ||
             _chaser == null ||
@@ -45,40 +41,40 @@ public class EnemyBrain : MonoBehaviour
             return;
         }
 
+        _attackRangeChecker = new AttackRangeChecker(_attackStartDistance);
         _patrolStrategy = new EnemyPatrolStrategy(_patroller, _chaser);
     }
 
     private void OnEnable()
     {
-        if (_eventReceiver == null)
-            return;
-
+        _detector.TargetChanged += OnTargetChanged;
         _eventReceiver.HitEvent += OnHitEvent;
         _eventReceiver.AttackFinishedEvent += OnAttackFinishedEvent;
+
+        _currentTarget = _detector.CurrentTarget;
     }
 
     private void OnDisable()
     {
-        if (_eventReceiver == null)
-            return;
+        if (_detector != null)
+            _detector.TargetChanged -= OnTargetChanged;
 
-        _eventReceiver.HitEvent -= OnHitEvent;
-        _eventReceiver.AttackFinishedEvent -= OnAttackFinishedEvent;
+        if (_eventReceiver != null)
+        {
+            _eventReceiver.HitEvent -= OnHitEvent;
+            _eventReceiver.AttackFinishedEvent -= OnAttackFinishedEvent;
+        }
+
+        _currentTarget = null;
     }
 
     private void FixedUpdate()
     {
-        UpdateTarget();
-        TryStartAttackIfInRange();
+        TryStartAttack();
         TickMovementAndAnimation();
     }
 
-    private void UpdateTarget()
-    {
-        _currentTarget = _detector.FindPlayer();
-    }
-
-    private void TryStartAttackIfInRange()
+    private void TryStartAttack()
     {
         if (_isAttacking)
             return;
@@ -86,21 +82,15 @@ public class EnemyBrain : MonoBehaviour
         if (_currentTarget == null)
             return;
 
-        Vector2 vectorToTarget = (Vector2)_currentTarget.position - (Vector2)transform.position;
-        float distanceToTargetSquared = vectorToTarget.sqrMagnitude;
-
-        if (distanceToTargetSquared < MinDistanceEpsilon)
+        if (_attackRangeChecker.IsTargetInRange(transform, _currentTarget) == false)
             return;
 
-        if (distanceToTargetSquared > _attackStartDistanceSquared)
+        if (_attack.TryStartAttack() == false)
             return;
 
-        if (_attack.TryStartAttack())
-        {
-            _isAttacking = true;
-            _animator.PlayAttack();
-            AttackStarted?.Invoke();
-        }
+        _isAttacking = true;
+        _animator.PlayAttack();
+        AttackStarted?.Invoke();
     }
 
     private void TickMovementAndAnimation()
@@ -118,24 +108,20 @@ public class EnemyBrain : MonoBehaviour
             return;
         }
 
-        TickChase(_currentTarget);
+        TickChase();
     }
 
     private void TickPatrol()
     {
         _patrolStrategy.Tick();
-
-        float patrolSpeedX = _patroller.CurrentSpeedX;
-        ApplyFacingAndSpeed(patrolSpeedX);
+        ApplyFacingAndSpeed(_patroller.CurrentSpeedX);
     }
 
-    private void TickChase(Transform target)
+    private void TickChase()
     {
         _patroller.Stop();
-        _chaser.TickChase(target);
-
-        float chaseSpeedX = _chaser.CurrentSpeedX;
-        ApplyFacingAndSpeed(chaseSpeedX);
+        _chaser.TickChase(_currentTarget);
+        ApplyFacingAndSpeed(_chaser.CurrentSpeedX);
     }
 
     private void StopMovement()
@@ -148,8 +134,12 @@ public class EnemyBrain : MonoBehaviour
     {
         _directionFlipper.SetFacingDirection(speedX);
         _pointsMirror.SetFacingDirection(speedX);
-
         _animator.SetSpeed(Mathf.Abs(speedX));
+    }
+
+    private void OnTargetChanged(Transform target)
+    {
+        _currentTarget = target;
     }
 
     private void OnHitEvent()

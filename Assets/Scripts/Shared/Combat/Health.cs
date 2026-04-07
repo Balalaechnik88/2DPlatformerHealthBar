@@ -29,9 +29,6 @@ public class Health : MonoBehaviour
 
     private void OnEnable()
     {
-        if (enabled == false)
-            return;
-
         HealthChanged?.Invoke(_currentHealth, _maxHealth);
     }
 

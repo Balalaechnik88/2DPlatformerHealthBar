@@ -9,14 +9,8 @@ public class DamageReceiver : MonoBehaviour
     private void Awake()
     {
         if (_health == null)
-            _health = GetComponent<Health>();
-
-        if (_health == null)
-            _health = GetComponentInParent<Health>();
-
-        if (_health == null)
         {
-            Debug.LogError($"[{nameof(DamageReceiver)}] Не найден Health. Скрипт отключён.", this);
+            Debug.LogError($"[{nameof(DamageReceiver)}] Не назначен Health. Скрипт отключён.", this);
             enabled = false;
         }
     }
